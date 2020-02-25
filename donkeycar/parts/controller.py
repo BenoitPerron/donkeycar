@@ -628,6 +628,28 @@ class RC3ChanJoystick(Joystick):
             0x0 : 'Steering',
         }
 
+class MocuteJoystick(Joystick):
+    '''
+    An interface to a cheap usp Mocute device. Set physical switch 
+    to game, use the /dev/input/event3 device and let it rip!
+    Contains mapping that work for Raspian Stretch drivers
+    '''
+    def __init__(self, *args, **kwargs):
+        super(MocuteJoystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+        }
+
+        self.button_names = {
+           0x13b : 'start', #9 315
+           0x134 : "triangle",  #2 308
+           0x131 : "circle",    #1 305
+           0x130 : "cross",    #0 304
+           0x133 : 'square',    #3 308
+
+       }
 
 class JoystickController(object):
     '''
@@ -1341,6 +1363,39 @@ class RC3ChanJoystickController(JoystickController):
             'Throttle' : self.on_throttle,
         }
 
+class MocuteJoystickController(JoystickController):
+    #A Controller object that maps inputs to actions
+    def __init__(self, *args, **kwargs):
+        super(MocuteJoystickController, self).__init__(*args, **kwargs)
+
+
+    def init_js(self):
+        #attempt to init joystick
+        try:
+            self.js = MocuteJoystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls for Mocute
+        '''
+
+        self.button_down_trigger_map = {
+            'square' : self.toggle_mode,
+            'circle' : self.toggle_manual_recording,
+            'triangle' : self.erase_last_N_records,
+            'cross' : self.emergency_stop,
+        }
+
+        self.axis_trigger_map = {
+            'left_stick_horz' : self.set_steering,
+            'left_stick_vert' : self.set_throttle,
+        }
+
 
 class JoyStickPub(object):
     '''
@@ -1437,6 +1492,8 @@ def get_js_controller(cfg):
         cont_class = LogitechJoystickController
     elif cfg.CONTROLLER_TYPE == "rc3":
         cont_class = RC3ChanJoystickController
+    elif cfg.CONTROLLER_TYPE == "mocute":
+        cont_class = MocuteJoystickController
     else:
         raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
 
