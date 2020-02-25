@@ -11,7 +11,7 @@ class BaseCamera:
         return self.frame
 
 class PiCamera(BaseCamera):
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, vflip=False, hflip=False):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
         
@@ -20,8 +20,6 @@ class PiCamera(BaseCamera):
         self.camera = PiCamera() #PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
         self.camera.framerate = framerate
-        self.camera.vflip = vflip
-        self.camera.hflip = hflip
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
             format="rgb", use_video_port=True)
@@ -201,7 +199,7 @@ class V4LCamera(BaseCamera):
     python setup.py build
     pip install -e .
     '''
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, dev_fn="/dev/video0", fourcc='MJPG'):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, dev_fn="/dev/video3", fourcc='MJPG'):
 
         self.running = True
         self.frame = None
